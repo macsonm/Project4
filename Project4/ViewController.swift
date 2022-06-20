@@ -4,10 +4,12 @@ import WebKit
 class ViewController: UIViewController {
     
     var webView: WKWebView!
+    var progressView: UIProgressView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         openYaUrl()
+        showtoolbarItems()
         openPage()
     }
     
@@ -26,6 +28,7 @@ class ViewController: UIViewController {
         ac.addAction(UIAlertAction(title: "apple.com", style: .default, handler: openPage))
         ac.addAction(UIAlertAction(title: "ya.ru", style: .default, handler: openPage))
         ac.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: openPage))
+        
         ac.popoverPresentationController?.barButtonItem = navigationItem.rightBarButtonItem
         present(ac, animated: true)
     }
@@ -39,6 +42,28 @@ class ViewController: UIViewController {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         title = webView.title
     }
+    
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if keyPath == "estimatedProgress" {
+            progressView.progress = Float(webView.estimatedProgress)
+        }
+        
+    }
+    func showtoolbarItems(){
+        let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil) //пространство между элементами
+        let refresh = UIBarButtonItem(barButtonSystemItem: .refresh, target: webView, action: #selector(webView.reload)) //кнопка рефреша
+        
+        //добавляем в тулбар индикатор прогреса без заполнения (отслеживание прогресса)
+        progressView = UIProgressView(progressViewStyle: .default)
+        progressView.sizeToFit()
+        let progressButton = UIBarButtonItem(customView: progressView)
+        
+        //заполняемый индикатор прогресса в нижнем тулбаре
+        webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
+        
+        toolbarItems = [progressButton, spacer, refresh ]
+        navigationController?.isToolbarHidden = false
+    }
 }
 
 extension ViewController: WKNavigationDelegate{
@@ -46,5 +71,6 @@ extension ViewController: WKNavigationDelegate{
         webView = WKWebView()
         webView.navigationDelegate = self
         view = webView
+        
     }
 }
